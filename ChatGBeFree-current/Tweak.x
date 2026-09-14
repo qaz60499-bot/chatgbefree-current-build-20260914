@@ -68,5 +68,5 @@ static BOOL CGBFIsOpenAIHost(NSString *host) {
 }
 
 %ctor {
-    NSLog(@"[ChatGBeFree] Loaded v4 successfully in %@", [[NSBundle mainBundle] bundleIdentifier]);
+    NSLog(@"[ChatGBeFree] Loaded v5 successfully in %@", [[NSBundle mainBundle] bundleIdentifier]);
 }
