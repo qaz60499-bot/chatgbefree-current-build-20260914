@@ -1,6 +1,6 @@
 Package: com.liam.chatgbefree
 Name: ChatGBeFree
-Version: 1.0.2-local-v3
+Version: 1.0.3-local-v4
 Architecture: iphoneos-arm64
 Description: Minimal app-version spoof for official ChatGPT only; no network interception.
 Maintainer: Local audited build
