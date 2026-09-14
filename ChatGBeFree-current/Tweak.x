@@ -1,9 +1,8 @@
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
-// Process-local app-version spoof for the official ChatGPT app only.
-// The substrate filter already limits injection to com.openai.chat; inside the
-// process, restrict spoofing further to NSBundle.mainBundle so frameworks and
-// embedded bundles keep their real metadata.
+// Process-local compatibility shim for the official ChatGPT app only.
+// Injection is additionally constrained by ChatGBeFree.plist to com.openai.chat.
 static BOOL CGBFIsMainBundle(NSBundle *bundle) {
     return bundle == [NSBundle mainBundle];
 }
@@ -43,6 +42,18 @@ static id CGBFSpoofedVersionValue(NSString *key) {
 
 %end
 
+// Current iOS 16 ChatGPT bypasses reported by the jailbreak community combine
+// app-version spoofing with a process-local iOS version spoof. Keep this hook
+// inside com.openai.chat only; never modify the device-wide ProductVersion.
+%hook UIDevice
+
+- (NSString *)systemVersion {
+    NSLog(@"[ChatGBeFree] UIDevice.systemVersion -> 17.0");
+    return @"17.0";
+}
+
+%end
+
 %ctor {
-    NSLog(@"[ChatGBeFree] Loaded v2 successfully in %@", [[NSBundle mainBundle] bundleIdentifier]);
+    NSLog(@"[ChatGBeFree] Loaded v3 successfully in %@", [[NSBundle mainBundle] bundleIdentifier]);
 }
