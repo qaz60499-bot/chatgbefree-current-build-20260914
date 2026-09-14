@@ -17,6 +17,14 @@ static id CGBFSpoofedVersionValue(NSString *key) {
     return nil;
 }
 
+static BOOL CGBFIsOpenAIHost(NSString *host) {
+    NSString *lower = host.lowercaseString;
+    return [lower isEqualToString:@"openai.com"] ||
+           [lower hasSuffix:@".openai.com"] ||
+           [lower isEqualToString:@"chatgpt.com"] ||
+           [lower hasSuffix:@".chatgpt.com"];
+}
+
 %hook NSBundle
 
 - (NSDictionary *)infoDictionary {
