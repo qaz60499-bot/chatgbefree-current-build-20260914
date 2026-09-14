@@ -1,8 +1,8 @@
 Package: com.liam.chatgbefree
 Name: ChatGBeFree
-Version: 1.0.4-local-v5
+Version: 1.0.5-local-v6
 Architecture: iphoneos-arm64
-Description: ChatGPT sunset compatibility tweak for Dopamine rootless; dual-arch arm64/arm64e build.
+Description: ChatGPT sunset compatibility tweak for Dopamine rootless; dual-arch arm64/arm64e build using a real released ChatGPT version identity.
 Maintainer: Local audited build
 Author: liamschwie upstream / local audited source
 Section: Tweaks

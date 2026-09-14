@@ -9,10 +9,10 @@ static BOOL CGBFIsMainBundle(NSBundle *bundle) {
 
 static id CGBFSpoofedVersionValue(NSString *key) {
     if ([key isEqualToString:@"CFBundleShortVersionString"]) {
-        return @"1.2099.999";
+        return @"1.2025.126";
     }
     if ([key isEqualToString:@"CFBundleVersion"]) {
-        return @"99999999999";
+        return @"14976891681";
     }
     return nil;
 }
@@ -26,8 +26,8 @@ static id CGBFSpoofedVersionValue(NSString *key) {
     }
 
     NSMutableDictionary *modDict = [dict mutableCopy];
-    modDict[@"CFBundleShortVersionString"] = @"1.2099.999";
-    modDict[@"CFBundleVersion"] = @"99999999999";
+    modDict[@"CFBundleShortVersionString"] = @"1.2025.126";
+    modDict[@"CFBundleVersion"] = @"14976891681";
     return modDict;
 }
 
@@ -48,17 +48,17 @@ static id CGBFSpoofedVersionValue(NSString *key) {
 %hookf(CFTypeRef, CFBundleGetValueForInfoDictionaryKey, CFBundleRef bundle, CFStringRef key) {
     if (bundle == CFBundleGetMainBundle() && key != NULL) {
         if (CFEqual(key, CFSTR("CFBundleShortVersionString"))) {
-            NSLog(@"[ChatGBeFree] CFBundle short version -> 1.2099.999");
-            return (__bridge CFTypeRef)@"1.2099.999";
+            NSLog(@"[ChatGBeFree] CFBundle short version -> 1.2025.126");
+            return (__bridge CFTypeRef)@"1.2025.126";
         }
         if (CFEqual(key, CFSTR("CFBundleVersion"))) {
-            NSLog(@"[ChatGBeFree] CFBundle build version -> 99999999999");
-            return (__bridge CFTypeRef)@"99999999999";
+            NSLog(@"[ChatGBeFree] CFBundle build version -> 14976891681");
+            return (__bridge CFTypeRef)@"14976891681";
         }
     }
     return %orig;
 }
 
 %ctor {
-    NSLog(@"[ChatGBeFree] Loaded v5 successfully in %@", [[NSBundle mainBundle] bundleIdentifier]);
+    NSLog(@"[ChatGBeFree] Loaded v6-real-version in %@", [[NSBundle mainBundle] bundleIdentifier]);
 }
