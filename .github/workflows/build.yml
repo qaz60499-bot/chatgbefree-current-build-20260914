@@ -1,0 +1,35 @@
+name: Build ChatGBeFree current-main
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Theos
+        uses: Randomblock1/theos-action@v1
+        with:
+          theos-dir: theos
+          theos-src: https://github.com/theos/theos
+          theos-sdks: https://github.com/theos/sdks
+          theos-sdks-branch: master
+
+      - name: Build rootless package
+        working-directory: ChatGBeFree-current
+        env:
+          THEOS: ${{ github.workspace }}/theos
+        run: make clean package FINALPACKAGE=1
+
+      - name: Show package
+        run: ls -la ChatGBeFree-current/packages
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ChatGBeFree-current-rootless
+          path: ChatGBeFree-current/packages/*.deb
+          if-no-files-found: error
