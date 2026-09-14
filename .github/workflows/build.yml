@@ -1,6 +1,9 @@
 name: Build ChatGBeFree current-main
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
