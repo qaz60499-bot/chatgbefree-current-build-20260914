@@ -13,6 +13,10 @@ jobs:
       run:
         working-directory: codex-rs
     steps:
+      - name: Enable long paths for the isolated Windows runner
+        shell: pwsh
+        working-directory: .
+        run: git config --global core.longpaths true
       - name: Checkout exact official Codex release
         uses: actions/checkout@v4
         with:
