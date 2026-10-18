@@ -68,12 +68,13 @@ jobs:
           $file = 'codex-rs/core/src/compact_remote_v2.rs'
           $paths = @(git diff --name-only)
           if ($paths.Count -ne 1 -or $paths[0] -ne $file) { throw "Unexpected changed files: $($paths -join ', ')" }
-          $diff = @(git diff --unified=0 -- $file)
-          $removed = @($diff | Where-Object { $_ -cmatch '^-[^-]' })
-          $added = @($diff | Where-Object { $_ -cmatch '^+[^+]' })
-          if ($removed.Count -ne 1 -or $added.Count -ne 1) { throw 'Expected exactly one changed source line' }
-          if ($removed[0] -cne '-const MAX_REMOTE_COMPACTION_V2_STREAM_RETRIES: u64 = 2;') { throw 'Unexpected removed line' }
-          if ($added[0] -cne '+const MAX_REMOTE_COMPACTION_V2_STREAM_RETRIES: u64 = 20;') { throw 'Unexpected added line' }
+          $stat = @(git diff --numstat -- $file)
+          if ($stat.Count -ne 1) { throw 'Expected exactly one modified file' }
+          $cols = $stat[0] -split "`t"
+          if ($cols.Count -ne 3 -or $cols[0] -ne '1' -or $cols[1] -ne '1') { throw "Expected exactly one changed line: $($stat[0])" }
+          $diff = (git diff --unified=0 -- $file | Out-String)
+          if (-not $diff.Contains('-const MAX_REMOTE_COMPACTION_V2_STREAM_RETRIES: u64 = 2;')) { throw 'Expected removed constant not found' }
+          if (-not $diff.Contains('+const MAX_REMOTE_COMPACTION_V2_STREAM_RETRIES: u64 = 20;')) { throw 'Expected added constant not found' }
           $source = [System.IO.File]::ReadAllText($file)
           if (-not $source.Contains('.stream_max_retries()') -or -not $source.Contains('.min(MAX_REMOTE_COMPACTION_V2_STREAM_RETRIES)')) { throw 'Retry budget logic no longer matches verified source' }
           foreach ($sample in @(@(0,0),@(1,1),@(2,2),@(5,5),@(20,20),@(21,20),@(50,20))) {
