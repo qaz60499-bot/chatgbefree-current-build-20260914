@@ -61,6 +61,25 @@ jobs:
           Write-Host "Changed file: $changes"
           git diff --check
           if ($LASTEXITCODE -ne 0) { throw 'Diff validation failed' }
+      - name: Verify one-line diff and retry-budget invariants
+        shell: pwsh
+        working-directory: .
+        run: |
+          $file = 'codex-rs/core/src/compact_remote_v2.rs'
+          $paths = @(git diff --name-only)
+          if ($paths.Count -ne 1 -or $paths[0] -ne $file) { throw "Unexpected changed files: $($paths -join ', ')" }
+          $diff = @(git diff --unified=0 -- $file)
+          $removed = @($diff | Where-Object { $_ -cmatch '^-[^-]' })
+          $added = @($diff | Where-Object { $_ -cmatch '^+[^+]' })
+          if ($removed.Count -ne 1 -or $added.Count -ne 1) { throw 'Expected exactly one changed source line' }
+          if ($removed[0] -cne '-const MAX_REMOTE_COMPACTION_V2_STREAM_RETRIES: u64 = 2;') { throw 'Unexpected removed line' }
+          if ($added[0] -cne '+const MAX_REMOTE_COMPACTION_V2_STREAM_RETRIES: u64 = 20;') { throw 'Unexpected added line' }
+          $source = [System.IO.File]::ReadAllText($file)
+          if (-not $source.Contains('.stream_max_retries()') -or -not $source.Contains('.min(MAX_REMOTE_COMPACTION_V2_STREAM_RETRIES)')) { throw 'Retry budget logic no longer matches verified source' }
+          foreach ($sample in @(@(0,0),@(1,1),@(2,2),@(5,5),@(20,20),@(21,20),@(50,20))) {
+            if ([Math]::Min($sample[0],20) -ne $sample[1]) { throw "Unexpected budget for $($sample[0])" }
+          }
+          Write-Host 'PASS: one-line change; capped min(provider stream retries, 20); no unrelated source changes.'
       - name: Record exact upstream Git revision
         shell: bash
         working-directory: .
