@@ -24,8 +24,15 @@ jobs:
           ref: rust-v0.163.0-alpha.10.2
           persist-credentials: false
           fetch-depth: 1
-      - name: Setup official CI environment
-        uses: ./.github/actions/setup-ci
+      - name: Configure portable CI paths without Dev Drive
+        shell: pwsh
+        working-directory: .
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP 'codex-build'
+          New-Item -ItemType Directory -Force -Path $root | Out-Null
+          "CARGO_TARGET_DIR=$root/target" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "CODEX_REPO_ROOT=$env:GITHUB_WORKSPACE" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          'CARGO_NET_GIT_FETCH_WITH_CLI=true' | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
       - name: Install source-pinned Rust
         uses: dtolnay/rust-toolchain@stable
         with:
