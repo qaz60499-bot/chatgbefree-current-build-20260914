@@ -1,0 +1,80 @@
+name: Codex 0.163 Remote Compaction Retry20 Windows Build
+on:
+  push:
+    branches:
+      - codex-remote-compact-retry20-20261018
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 115
+    defaults:
+      run:
+        working-directory: codex-rs
+    steps:
+      - name: Checkout exact official Codex release
+        uses: actions/checkout@v4
+        with:
+          repository: openai/codex
+          ref: rust-v0.163.0-alpha.10.2
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Setup official CI environment
+        uses: ./.github/actions/setup-ci
+      - name: Install source-pinned Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.95.0"
+          targets: x86_64-pc-windows-msvc
+      - name: Configure verified rusty_v8 dependency
+        uses: ./.github/actions/setup-rusty-v8
+        with:
+          target: x86_64-pc-windows-msvc
+      - name: Configure MSVC developer environment
+        uses: ./.github/actions/setup-msvc-env
+        with:
+          target: x86_64-pc-windows-msvc
+      - name: Apply the one-constant Retry20 change
+        shell: pwsh
+        working-directory: .
+        run: |
+          $file = 'codex-rs/core/src/compact_remote_v2.rs'
+          $old = 'const MAX_REMOTE_COMPACTION_V2_STREAM_RETRIES: u64 = 2;'
+          $new = 'const MAX_REMOTE_COMPACTION_V2_STREAM_RETRIES: u64 = 20;'
+          $source = [System.IO.File]::ReadAllText($file)
+          if ($source.Split(@($old), [System.StringSplitOptions]::None).Count -ne 2) { throw 'Expected one exact matching constant' }
+          if (-not $source.Contains('.min(MAX_REMOTE_COMPACTION_V2_STREAM_RETRIES)')) { throw 'Expected retry-limit usage not found' }
+          [System.IO.File]::WriteAllText($file, $source.Replace($old, $new))
+          $changes = git diff --numstat -- $file
+          Write-Host "Changed file: $changes"
+          git diff --check
+          if ($LASTEXITCODE -ne 0) { throw 'Diff validation failed' }
+      - name: Record exact upstream Git revision
+        shell: bash
+        working-directory: .
+        run: echo "STABLE_GIT_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Compile Windows Codex CLI
+        shell: bash
+        env:
+          LIBSQLITE3_FLAGS: SQLITE_DISABLE_INTRINSIC
+        run: cargo build --release --target x86_64-pc-windows-msvc --bin codex
+      - name: Smoke-test and stage unsigned candidate
+        shell: pwsh
+        working-directory: .
+        run: |
+          $candidate = Join-Path $env:CARGO_TARGET_DIR 'x86_64-pc-windows-msvc/release/codex.exe'
+          if (-not (Test-Path $candidate)) { throw "Built binary missing: $candidate" }
+          & $candidate --version
+          if ($LASTEXITCODE -ne 0) { throw 'CLI smoke test failed' }
+          $dest = Join-Path $env:RUNNER_TEMP 'codex-retry20-candidate'
+          New-Item -ItemType Directory -Force -Path $dest | Out-Null
+          Copy-Item -LiteralPath $candidate -Destination (Join-Path $dest 'codex.exe')
+          Get-FileHash -Algorithm SHA256 (Join-Path $dest 'codex.exe')
+      - name: Upload candidate executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-0.163.0-alpha.10.2-windows-x64-retry20-unsigned
+          path: ${{ runner.temp }}/codex-retry20-candidate/codex.exe
+          if-no-files-found: error
+          retention-days: 3
